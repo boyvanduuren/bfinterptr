@@ -5,6 +5,8 @@
   to a BF program such that you don't have to worry about any command
   characters. Any ".", ",", "+", "-", "<" and ">" characters are simply
   ignored, the "[" and "]" characters just have to be balanced.
+
+  Copied from https://en.wikipedia.org/wiki/Brainfuck
 ]
 +++++ +++               Set Cell #0 to 8
 [
