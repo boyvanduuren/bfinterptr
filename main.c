@@ -5,14 +5,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "main.h"
 
 int main()
 {
-//    const char* ribbon = "+++++[->+<]>.";
-    const char* ribbon = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
+    // our program will be in this piece of memory
+    char* ribbon = malloc(sizeof(char) * STACK_SIZE);
+    // this piece of memory is for the program to use
     char* stackptr = malloc(sizeof(char) * STACK_SIZE);
+    // keep a pointer to the beginning of that memory for free()
+    char* beginningofstack = stackptr;
 
+    // read our program from STDIN
+    read(STDIN_FILENO, ribbon, RIBBON_SIZE-1);
+
+    // our main loop
     for (int i = 0; i < strlen(ribbon); i++) {
         char operand = ribbon[i];
         op(ribbon, i, &stackptr);
@@ -21,15 +29,19 @@ int main()
             i = findclosingbracket(ribbon, i);
         }
     }
-    printf("%d", stackptr[0]);
+
+    // free allocated memory
+    free(ribbon);
+    free(beginningofstack);
 }
 
-int findclosingbracket(const char *ribbon, int pos)
+// find the matching closing bracket for a loop
+int findclosingbracket(const char* ribbon, int pos)
 {
     int count = 0;
-    int closingbracket = -1;
+    int closingbracket = 0;
 
-    while (closingbracket == -1) {
+    while (closingbracket == 0) {
         char symbol = ribbon[++pos];
         if (symbol == ']') {
             if (count == 0) {
@@ -43,7 +55,7 @@ int findclosingbracket(const char *ribbon, int pos)
             count++;
         }
         if (pos > strlen(ribbon)) {
-            return -2;
+            return -1;
         }
     }
 
@@ -52,13 +64,20 @@ int findclosingbracket(const char *ribbon, int pos)
 
 void newloop(const char* ribbon, int start, int end, char** stackptr)
 {
+    // the end of a loop should never be less than 1
+    if (end < 1) {
+        exit(EXIT_FAILURE);
+    }
+    // loop while value at the stack isn't 0
     while (**stackptr) {
-        printf("iter: ");
         for (int i = start+1; i < end; i++) {
-            printf("%c", ribbon[i]);
+            char symbol = ribbon[i];
             op(ribbon, i, stackptr);
+            if (symbol == '[') {
+                // if we started a subloop jump to the end of that
+                i = findclosingbracket(ribbon, i);
+            }
         }
-        printf(" (ptr: %d, ptr+1: %d)\n", **stackptr, *(*stackptr+1));
     }
 }
 
@@ -70,7 +89,7 @@ void op(const char* ribbon, int pos, char** stackptr)
             newloop(ribbon, pos, findclosingbracket(ribbon, pos), stackptr);
             break;
         case ']':
-            // don't know if we need to do something here
+            // We don't need to do anything for ]
             break;
         case '<':
             (*stackptr)--;
